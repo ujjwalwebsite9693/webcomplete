@@ -42,6 +42,19 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Explicit Android Bank Observer App Endpoints (ApiClient.java compatibility)
+const {
+  pairAndroidDevice,
+  handleHeartbeat,
+  handleBankObservation
+} = require('./controllers/paymentController');
+
+app.post('/api/v1/pollers/android/pair', pairAndroidDevice);
+app.post('/api/v1/pollers/android/heartbeat', handleHeartbeat);
+app.post('/api/v1/pollers/android/events', handleBankObservation);
+app.post('/api/v1/observers/sms', handleBankObservation);
+app.post('/api/v1/observers/heartbeat', handleHeartbeat);
+
 // SEO & Google Indexing Routes
 app.use('/', require('./routes/seoRoutes'));
 
@@ -75,6 +88,6 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on 0.0.0.0:${PORT}`);
 });

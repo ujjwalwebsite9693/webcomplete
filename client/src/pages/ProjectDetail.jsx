@@ -155,6 +155,28 @@ const ProjectDetail = () => {
     }
   };
 
+  // Live Automated Status Poller (Detects real bank SMS from phone observer in real-time)
+  useEffect(() => {
+    if (!upiModalOpen || !upiOrderData?.orderId || isPurchased) return;
+
+    const poller = setInterval(async () => {
+      try {
+        const res = await api.get(`/payments/status/${upiOrderData.orderId}`);
+        if (res.data?.success && res.data?.status === 'SUCCESS') {
+          clearInterval(poller);
+          setIsPurchased(true);
+          setDownloadLink(res.data.downloadUrl);
+          setUtrInput(res.data.utrNumber || 'Auto-Verified');
+          setUtrSuccessMsg('Payment Verified via Bank Observer! Source code unlocked.');
+        }
+      } catch (e) {
+        // Silent poll warning
+      }
+    }, 1500);
+
+    return () => clearInterval(poller);
+  }, [upiModalOpen, upiOrderData?.orderId, isPurchased]);
+
   const handleSubmitUtr = async (e) => {
     e.preventDefault();
     setUtrErrorMsg('');
@@ -783,6 +805,29 @@ const ProjectDetail = () => {
                   <p className="text-[10px] text-gray-400">
                     Supported: GPay • PhonePe • Paytm • BHIM • Cred • Any UPI App
                   </p>
+
+                  {/* Test Mode Simulator */}
+                  <div className="pt-2 border-t border-slate-800 text-center">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await api.post('/payments/simulate', { orderId: upiOrderData.orderId });
+                          if (res.data?.success) {
+                            setIsPurchased(true);
+                            setDownloadLink(res.data.downloadUrl);
+                            setUtrInput(res.data.utr);
+                            setUtrSuccessMsg('⚡ Test Payment Verified! Source code unlocked.');
+                          }
+                        } catch (e) {
+                          alert('Simulation error: ' + (e.response?.data?.message || e.message));
+                        }
+                      }}
+                      className="text-[10px] text-cyan-400 hover:text-cyan-300 underline font-semibold"
+                    >
+                      ⚡ Test Mode: Simulate Instant Bank Payment
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
